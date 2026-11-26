@@ -9,7 +9,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from .auth import verify_api_key
-from .cost_guard import check_budget, record_cost
+from .cost_guard import check_budget, record_cost, release_budget
 from .rate_limiter import check_rate_limit
 from .redis_client import r, redis_healthy
 from utils.mock_llm import ask as llm_ask
@@ -82,9 +82,18 @@ def ready():
 def ask(body: AskRequest, api_key: str = Depends(verify_api_key)):
     started = time.perf_counter()
     check_rate_limit(api_key)
-    check_budget()
-    answer = llm_ask(body.question)
-    record_cost(input_tokens=len(body.question.split()), output_tokens=len(answer.split()))
+    input_tokens = len(body.question.split())
+    reserved_cost = check_budget(input_tokens=input_tokens)
+    try:
+        answer = llm_ask(body.question)
+    except Exception:
+        release_budget(reserved_cost)
+        raise
+    record_cost(
+        input_tokens=input_tokens,
+        output_tokens=len(answer.split()),
+        reserved_cost=reserved_cost,
+    )
     logger.info(json.dumps({
         "event": "request",
         "path": "/ask",

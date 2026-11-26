@@ -34,6 +34,27 @@ def test_invalid_numeric_setting_fails_fast(monkeypatch):
         importlib.reload(config)
 
 
+@pytest.mark.parametrize(
+    "name,value",
+    [
+        ("PORT", "0"),
+        ("PORT", "65536"),
+        ("RATE_LIMIT_PER_MINUTE", "0"),
+        ("RATE_LIMIT_PER_MINUTE", "-1"),
+        ("DAILY_BUDGET_USD", "-0.01"),
+        ("DAILY_BUDGET_USD", "nan"),
+        ("DAILY_BUDGET_USD", "inf"),
+    ],
+)
+def test_numeric_settings_reject_invalid_ranges(monkeypatch, name, value):
+    monkeypatch.setenv(name, value)
+
+    from app import config
+
+    with pytest.raises(ValueError, match=name):
+        importlib.reload(config)
+
+
 def test_redis_client_is_created_without_ping(monkeypatch):
     monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/4")
     ping = Mock(side_effect=AssertionError("Redis must not be pinged on import"))

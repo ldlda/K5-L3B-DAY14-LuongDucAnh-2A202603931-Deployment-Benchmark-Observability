@@ -50,7 +50,7 @@ def test_ask_validates_question_length(client, monkeypatch):
 def test_ask_runs_guards_and_records_cost(client, monkeypatch, caplog):
     monkeypatch.setattr(auth.settings, "agent_api_key", "expected-key")
     rate = Mock()
-    budget = Mock()
+    budget = Mock(return_value=0.01)
     llm = Mock(return_value="A useful answer")
     record = Mock(return_value=0.001)
     monkeypatch.setattr(main, "check_rate_limit", rate)
@@ -69,9 +69,9 @@ def test_ask_runs_guards_and_records_cost(client, monkeypatch, caplog):
     assert response.status_code == 200
     assert response.json()["answer"] == "A useful answer"
     rate.assert_called_once_with("expected-key")
-    budget.assert_called_once_with()
+    budget.assert_called_once_with(input_tokens=2)
     llm.assert_called_once_with("hello world")
-    record.assert_called_once_with(input_tokens=2, output_tokens=3)
+    record.assert_called_once_with(input_tokens=2, output_tokens=3, reserved_cost=0.01)
     request_logs = [r for r in caplog.records if r.name == "app.main"]
     assert request_logs
     assert json.loads(request_logs[-1].getMessage())["event"] == "request"

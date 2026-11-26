@@ -1,6 +1,7 @@
 """Typed application settings loaded from environment variables."""
 
 from dataclasses import dataclass
+import math
 import os
 
 
@@ -12,6 +13,14 @@ class Settings:
     redis_url: str
     rate_limit_per_minute: int
     daily_budget_usd: float
+
+    def __post_init__(self) -> None:
+        if not 1 <= self.port <= 65535:
+            raise ValueError("PORT must be between 1 and 65535")
+        if self.rate_limit_per_minute <= 0:
+            raise ValueError("RATE_LIMIT_PER_MINUTE must be positive")
+        if not math.isfinite(self.daily_budget_usd) or self.daily_budget_usd < 0:
+            raise ValueError("DAILY_BUDGET_USD must be finite and nonnegative")
 
 
 def load_settings() -> Settings:
