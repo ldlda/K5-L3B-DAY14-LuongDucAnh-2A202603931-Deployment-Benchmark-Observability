@@ -47,11 +47,13 @@ production/
 └── requirements.txt
 ```
 
+The advanced demo uses Redis for its per-user monthly cost budget. Start a Redis service and set `REDIS_URL` before running the app; the default is `redis://localhost:6379/0`. The budget defaults to `$10` per user per UTC calendar month and can be changed with `MONTHLY_BUDGET_USD`.
+
 ### Chạy thử
 ```bash
 cd production
 pip install -r requirements.txt
-python app.py
+REDIS_URL=redis://localhost:6379/0 python app.py
 
 # Lấy JWT token
 curl -X POST http://localhost:8000/auth/token \

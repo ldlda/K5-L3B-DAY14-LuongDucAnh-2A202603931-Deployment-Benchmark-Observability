@@ -37,7 +37,7 @@ import uvicorn
 
 from auth import verify_token, authenticate_user, create_token
 from rate_limiter import rate_limiter_user, rate_limiter_admin
-from cost_guard import cost_guard
+from cost_guard import MAX_OUTPUT_TOKENS, cost_guard
 from utils.mock_llm import ask
 
 logging.basicConfig(level=logging.INFO)
@@ -141,23 +141,36 @@ async def ask_agent(
     limiter = rate_limiter_admin if role == "admin" else rate_limiter_user
     rate_info = limiter.check(username)
 
-    # ✅ Cost check trước khi gọi LLM
-    cost_guard.check_budget(username)
-
-    # Gọi LLM (mock)
-    response_text = ask(body.question)
-
-    # ✅ Ghi nhận usage (mock token count)
+    # Reserve the worst-case mock output cost before calling the LLM.
     input_tokens = len(body.question.split()) * 2
+    month_key = cost_guard.current_month()
+    reserved_cost = cost_guard.estimate_cost(input_tokens, MAX_OUTPUT_TOKENS)
+    if not cost_guard.check_budget(username, reserved_cost, month_key=month_key):
+        raise HTTPException(status_code=402, detail="Monthly budget exceeded")
+
+    try:
+        response_text = ask(body.question)
+    except Exception:
+        cost_guard.release_budget(username, reserved_cost, month_key=month_key)
+        raise
+
+    # Settle the reservation to actual mock token usage.
     output_tokens = len(response_text.split()) * 2
-    usage = cost_guard.record_usage(username, input_tokens, output_tokens)
+    cost_guard.record_usage(
+        username,
+        input_tokens,
+        output_tokens,
+        reserved_cost=reserved_cost,
+        month_key=month_key,
+    )
+    usage = cost_guard.get_usage(username)
 
     return {
         "question": body.question,
         "answer": response_text,
         "usage": {
             "requests_remaining": rate_info["remaining"],
-            "budget_remaining_usd": usage.total_cost_usd,
+            "budget_remaining_usd": usage["budget_remaining_usd"],
         },
     }
 
