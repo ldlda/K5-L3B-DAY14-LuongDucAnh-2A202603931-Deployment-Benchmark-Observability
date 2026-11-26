@@ -1,15 +1,21 @@
-"""
-Kết nối Redis dùng chung cho rate limiter và cost guard.
+"""Shared lazy Redis client used by readiness, rate limiting, and cost guard."""
 
-Yêu cầu:
-  • Đọc REDIS_URL từ config
-  • App vẫn phải KHỞI ĐỘNG ĐƯỢC khi Redis chưa sẵn sàng (đừng ping Redis lúc import)
-  • redis_healthy() dùng cho GET /ready: Redis không kết nối được → False
-"""
+import redis
 
-r = None  # TODO: tạo client, vd redis.from_url(settings.redis_url, decode_responses=True)
+from .config import settings
+
+
+# Creating the client is local-only; redis-py opens a connection on first use.
+r = redis.Redis.from_url(
+    settings.redis_url,
+    decode_responses=True,
+    socket_connect_timeout=1,
+    socket_timeout=1,
+)
 
 
 def redis_healthy() -> bool:
-    # TODO: ping Redis; lỗi kết nối → False
-    return False
+    try:
+        return bool(r and r.ping())
+    except (redis.RedisError, OSError):
+        return False
