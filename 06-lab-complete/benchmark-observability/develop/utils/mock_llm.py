@@ -106,6 +106,13 @@ KNOWLEDGE_BASE: list[tuple[list[str], str]] = [
     (["golden dataset", "eval", "đánh giá chất lượng", "regression"],
      "Eval chất lượng dùng golden dataset: bộ câu hỏi có đáp án mong đợi. Chạy eval trước mỗi lần deploy "
      "để bắt regression, ví dụ accuracy giảm so với phiên bản trước."),
+    (["jwt"],
+     "JWT là một token có chữ ký số để xác minh dữ liệu không bị sửa đổi; token thường có thời hạn hết hạn. "
+     "API key thường là chuỗi bí mật tĩnh do client gửi. JWT có thể mang claims và hết hạn tự động, "
+     "còn API key thường được thu hồi hoặc xoay vòng thủ công."),
+    (["kubernetes", "hpa"],
+     "Kubernetes HPA (Horizontal Pod Autoscaler) tự tăng hoặc giảm số replicas dựa trên mức sử dụng CPU, "
+     "memory hoặc custom metrics như số request hay độ dài queue."),
     (["log", "logging", "json"],
      "Structured logging ghi log dạng JSON với các field cố định (timestamp, level, request_id, trace_id) "
      "để dễ tìm kiếm, lọc và liên kết với trace."),

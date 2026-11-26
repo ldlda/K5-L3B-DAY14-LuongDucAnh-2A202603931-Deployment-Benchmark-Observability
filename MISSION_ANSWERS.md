@@ -64,11 +64,11 @@ Started the four-service stack. Through Nginx, `GET /health` and `POST /ask` eac
 
 ### Exercise 3.1 / 3.2: Public deployment
 
-- Primary platform: **Render** (deployment not completed yet).
-- Public URL: **pending**.
-- Screenshots: **pending**.
+- Primary platform: **Render**.
+- Public URL: https://day14-agent-rbvx.onrender.com/
+- Public checks run: `/health` **200**, `/ready` **200**, unauthenticated `POST /ask` **401**, and authenticated `POST /ask` **200**. Deployment screenshots are saved under `screenshots/`.
 
-The Render Blueprint in `06-lab-complete/render.yaml` creates the Docker web service and Redis-compatible Key Value service, generates `AGENT_API_KEY`, wires `REDIS_URL` from the Key Value service, and health-checks `/health`. The Railway config selects the Dockerfile, health-checks `/health`, and restarts on failure; Redis must be added and `REDIS_URL` configured separately. I have not claimed a deployed URL or run the public-URL checks.
+The Render Blueprint in `06-lab-complete/render.yaml` creates the Docker web service and Redis-compatible Key Value service, generates `AGENT_API_KEY`, wires `REDIS_URL` from the Key Value service, and health-checks `/health`. The Railway config selects the Dockerfile, health-checks `/health`, and restarts on failure; Redis must be added and `REDIS_URL` configured separately.
 
 ### Exercise 3.3: Cloud Run pipeline
 
@@ -127,4 +127,5 @@ Ran the three-agent Compose stack and the supplied stateless test through Nginx.
 ## AI log
 
 - Used ChatGPT to inspect the assignment and repository, implement Part 6, and add tests. The implementation and review fixes are in commits `3395623` and `3578db9`; the full suite passed (31 tests), and the production checker passed 12/12.
-- Used ChatGPT to inspect the supplied Part 1–5 examples, implement the Part 4 monthly Redis cost guard, and draft these answers. Local measurements and HTTP results above came from commands run on 2026-11-26. The public Render deployment, URL, and screenshots remain pending and must not be treated as completed evidence.
+- Used ChatGPT to inspect the supplied Part 1–5 examples, implement the Part 4 monthly Redis cost guard, and draft these answers. Local measurements and HTTP results above came from commands run on 2026-11-26. The public Render deployment and its URL/screenshots were completed separately; Part 7 benchmark and observability results are documented in `BENCHMARK_REPORT.md` and the submitted JSON/CSV reports.
+- Used ChatGPT to run the Part 7 concurrency, slow-request, quality-evaluation, and one-versus-three-instance Locust benchmarks on 2026-11-26; the initial v2 quality misses were fixed by adding targeted KB entries. The Part 7 observability stack was run as isolated containers bound only to Tailscale ports. Error/latency injection produced `AgentHighErrorRate` and `AgentHighLatencyP95`; the large model produced `LLMCostBurnRateHigh`; pausing one replica produced `AgentInstanceDown`. Running v1 produced no infrastructure alert, while the golden-set eval showed its quality regression. Grafana, slow-trace, error-trace, and firing-alert screenshots are in `screenshots/`.
